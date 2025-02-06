@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Notion Auth Callback</title>
+    <script>
+        window.onload = function() {
+            // 获取当前 URL 的查询参数
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+            
+            // 构造 Chrome 扩展的回调 URL
+            const extensionId = 'omaognibkmkakblaanoknnaphomcdikc';
+            const redirectUrl = `chrome-extension://${extensionId}/auth-callback.html?code=${code}&state=${state}`;
+            
+            // 重定向到扩展
+            window.location.href = redirectUrl;
+        };
+    </script>
+</head>
+<body>
+    <p>Redirecting to extension...</p>
+</body>
+</html>
