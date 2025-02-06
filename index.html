@@ -2,23 +2,157 @@
 <html>
 <head>
     <title>Notion Auth Callback</title>
-    <script>
-        window.onload = function() {
-            // 获取当前 URL 的查询参数
-            const urlParams = new URLSearchParams(window.location.search);
-            const code = urlParams.get('code');
-            const state = urlParams.get('state');
-            
-            // 构造 Chrome 扩展的回调 URL
-            const extensionId = 'omaognibkmkakblaanoknnaphomcdikc';
-            const redirectUrl = `chrome-extension://${extensionId}/auth-callback.html?code=${code}&state=${state}`;
-            
-            // 重定向到扩展
-            window.location.href = redirectUrl;
-        };
-    </script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 90%;
+        }
+        .success {
+            color: #4caf50;
+        }
+        .error {
+            color: #f44336;
+        }
+        .debug {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-size: 12px;
+            text-align: left;
+            word-break: break-all;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
-    <p>Redirecting to extension...</p>
+    <div class="container">
+        <div id="message">处理授权中...</div>
+        <div class="spinner" id="spinner"></div>
+        <div id="debug" class="debug" style="display: none;"></div>
+    </div>
+    <script>
+        // 获取扩展 ID
+        const extensionId = 'omaognibkmkakblaanoknnaphomcdikc';
+
+        // 记录日志
+        function log(message, data) {
+            console.log(message, data);
+            const debug = document.getElementById('debug');
+            debug.style.display = 'block';
+            debug.innerHTML += `<div>${message}: ${JSON.stringify(data)}</div>`;
+        }
+
+        // 处理错误
+        function handleError(message) {
+            const messageDiv = document.getElementById('message');
+            const spinner = document.getElementById('spinner');
+            spinner.style.display = 'none';
+            messageDiv.textContent = message;
+            messageDiv.className = 'error';
+            log('错误', message);
+        }
+
+        // 处理成功
+        function handleSuccess(code, state) {
+            // 使用 chrome.runtime.sendMessage 发送消息给扩展
+            chrome.runtime.sendMessage(extensionId, {
+                type: 'NOTION_AUTH_CODE',
+                code: code,
+                state: state
+            }, response => {
+                if (chrome.runtime.lastError) {
+                    handleError('无法连接到扩展：' + chrome.runtime.lastError.message);
+                    return;
+                }
+
+                const messageDiv = document.getElementById('message');
+                const spinner = document.getElementById('spinner');
+                spinner.style.display = 'none';
+                messageDiv.textContent = '授权成功，请关闭此窗口';
+                messageDiv.className = 'success';
+
+                // 关闭窗口
+                setTimeout(() => window.close(), 2000);
+            });
+        }
+
+        // 页面加载时处理授权
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const error = urlParams.get('error');
+            const state = urlParams.get('state');
+
+            log('收到的参数', { code, error, state });
+
+            if (error) {
+                handleError('授权失败：' + error);
+                return;
+            }
+
+            if (!code) {
+                handleError('未收到授权码');
+                return;
+            }
+
+            // 开始处理授权
+            handleSuccess(code, state);
+        };
+    </script>
+</body>
+</html>
+                }
+
+                spinner.style.display = 'none';
+                messageDiv.textContent = '授权成功！';
+                messageDiv.className = 'success';
+
+                // 将令牌发送给扩展
+                const extensionId = 'omaognibkmkakblaanoknnaphomcdikc';
+                chrome.runtime.sendMessage(extensionId, { 
+                    type: 'NOTION_AUTH_SUCCESS',
+                    data: data
+                }, response => {
+                    log('扩展响应', response);
+                    if (response && response.success) {
+                        setTimeout(() => window.close(), 2000);
+                    }
+                });
+            })
+            .catch(error => {
+                log('错误', error);
+                spinner.style.display = 'none';
+                messageDiv.textContent = '授权失败：' + error.message;
+                messageDiv.className = 'error';
+            });
+        };
+    </script>
 </body>
 </html>

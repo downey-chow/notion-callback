@@ -2,13 +2,13 @@
   "name": "notion-callback",
   "version": "1.0.0",
   "description": "Notion OAuth callback handler",
-  "main": "index.js",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
-    "start": "node index.js"
+    "vercel-build": "echo 'Building...'"
   },
   "dependencies": {
-    "express": "^4.17.1",
-    "cors": "^2.8.5",
-    "node-fetch": "^2.6.1"
+    "cors": "^2.8.5"
   }
 }
